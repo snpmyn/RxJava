@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">RxJava</string>
+    <string name="exampleOne">示例一</string>
+    <string name="exampleTwo">示例二</string>
+    <string name="exampleThree">示例三</string>
+    <string name="exampleFour">示例四</string>
+    <string name="exampleFive">示例五</string>
+    <string name="exampleSix">示例六</string>
 </resources>
