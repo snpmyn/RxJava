@@ -8,14 +8,20 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.core.ObservableSource;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.functions.Function;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
@@ -25,12 +31,20 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private final String TAG = this.getClass().getSimpleName();
+    /**
+     * 控件
+     */
     private MaterialButton mainActivityBtnExampleOne;
     private MaterialButton mainActivityBtnExampleTwo;
     private MaterialButton mainActivityBtnExampleThree;
     private MaterialButton mainActivityBtnExampleFour;
     private MaterialButton mainActivityBtnExampleFive;
     private MaterialButton mainActivityBtnExampleSix;
+    private MaterialButton mainActivityBtnExampleSeven;
+    /**
+     * 魔法值
+     */
+    private final int MAGIC_VALUE_INT_3 = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mainActivityBtnExampleFour = findViewById(R.id.mainActivityBtnExampleFour);
         mainActivityBtnExampleFive = findViewById(R.id.mainActivityBtnExampleFive);
         mainActivityBtnExampleSix = findViewById(R.id.mainActivityBtnExampleSix);
+        mainActivityBtnExampleSeven = findViewById(R.id.mainActivityBtnExampleSeven);
     }
 
     /**
@@ -62,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mainActivityBtnExampleFour.setOnClickListener(this);
         mainActivityBtnExampleFive.setOnClickListener(this);
         mainActivityBtnExampleSix.setOnClickListener(this);
+        mainActivityBtnExampleSeven.setOnClickListener(this);
     }
 
     @Override
@@ -84,6 +100,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.mainActivityBtnExampleSix:
                 exampleSix();
+                break;
+            case R.id.mainActivityBtnExampleSeven:
+                exampleSeven();
                 break;
             default:
                 break;
@@ -193,29 +212,120 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.d(TAG, "[接收] onNext " + integer);
             }
         };
-        observable.subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer);
+        observable.subscribe(consumer);
     }
 
     /**
      * 示例四
      */
     private void exampleFour() {
-
+        Observable<Integer> observable = io.reactivex.rxjava3.core.Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<Integer> emitter) throws Throwable {
+                Log.d(TAG, "上游线程 " + Thread.currentThread().getName());
+                Log.d(TAG, "[发射] emitter 1");
+                emitter.onNext(1);
+            }
+        });
+        io.reactivex.rxjava3.functions.Consumer<Integer> consumer = new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Throwable {
+                Log.d(TAG, "下游线程 " + Thread.currentThread().getName());
+                Log.d(TAG, "[接收] onNext " + integer);
+            }
+        };
+        observable.subscribeOn(Schedulers.newThread())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
+                .subscribe(consumer);
     }
 
     /**
      * 示例五
      */
     private void exampleFive() {
-
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<Integer> emitter) throws Throwable {
+                Log.d(TAG, "[发射] emitter 1");
+                emitter.onNext(1);
+                Log.d(TAG, "[发射] emitter 2");
+                emitter.onNext(2);
+            }
+        }).map(new Function<Integer, String>() {
+            @Override
+            public String apply(Integer integer) throws Throwable {
+                Log.d(TAG, "[转化] apply " + integer);
+                return "apply " + integer;
+            }
+        }).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Throwable {
+                Log.d(TAG, "[接收] accept " + s);
+            }
+        });
     }
 
     /**
      * 示例六
      */
     private void exampleSix() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<Integer> emitter) throws Throwable {
+                Log.d(TAG, "[发射] emitter 1");
+                emitter.onNext(1);
+                Log.d(TAG, "[发射] emitter 2");
+                emitter.onNext(2);
+                Log.d(TAG, "[发射] emitter 3");
+                emitter.onNext(3);
+            }
+        }).flatMap(new Function<Integer, ObservableSource<String>>() {
+            @Override
+            public ObservableSource<String> apply(Integer integer) throws Throwable {
+                List<String> list = new ArrayList<>();
+                for (int i = 0; i < MAGIC_VALUE_INT_3; i++) {
+                    list.add("apply " + integer);
+                }
+                return Observable.fromIterable(list).delay(10, TimeUnit.SECONDS);
+            }
+        }).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Throwable {
+                Log.d(TAG, "[接收] accept " + s);
+            }
+        });
+    }
 
+    /**
+     * 示例七
+     */
+    private void exampleSeven() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<Integer> emitter) throws Throwable {
+                Log.d(TAG, "[发射] emitter 1");
+                emitter.onNext(1);
+                Log.d(TAG, "[发射] emitter 2");
+                emitter.onNext(2);
+                Log.d(TAG, "[发射] emitter 3");
+                emitter.onNext(3);
+            }
+        }).concatMap(new Function<Integer, ObservableSource<String>>() {
+            @Override
+            public ObservableSource<String> apply(Integer integer) throws Throwable {
+                List<String> list = new ArrayList<>();
+                for (int i = 0; i < MAGIC_VALUE_INT_3; i++) {
+                    list.add("apply " + integer);
+                }
+                return Observable.fromIterable(list).delay(10, TimeUnit.SECONDS);
+            }
+        }).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Throwable {
+                Log.d(TAG, "[接收] accept " + s);
+            }
+        });
     }
 }

@@ -61,4 +61,13 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/mainActivityBtnExampleFive" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/mainActivityBtnExampleSeven"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/exampleSeven"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/mainActivityBtnExampleSix" />
 </androidx.constraintlayout.widget.ConstraintLayout>
